@@ -90,34 +90,34 @@ declaration in the code sample, and function declarations must be converted to
 variable assignments.  (Otherwise, they'll write directly to global context.)
 
 So, we use the `recast` module to scan the code and track what global variables
-are assigned to, along with the location of any function declarations.  The
-`globals` we use for tracking inherits from the `.context`, so that we don't
-add dummy globals for already-existing context or global variables.
+are assigned to, along with the location of any function declarations.  Any
+such variables are added as `undefined` properties of the context
 
         recast = require 'recast'
 
         rewrite: (src) ->
 
-            globals = Object.create(@context)
+            context = @context
             funcs = []
 
             recast.visit recast.parse(src),
                 visitAssignmentExpression: vae = (p) ->
                     @traverse(p)
                     target = p.node.left
-                    return unless target.type is 'Identifier'
+                    if target.type is 'VariableDeclaration'
+                        target = target.declarations[0].id 
                     name = target.name
-                    return if name of globals
+                    return if name of context
                     s = p.scope.lookup(target.name)
                     if not s? or s.isGlobal
-                        globals[name] = undefined
+                        context[name] = undefined
                     return
                 visitForInStatement: vae
 
                 visitFunctionDeclaration: (p) ->
                     name = p.node.id.name
                     funcs.push [name, p.node.loc.start]
-                    globals[name] = undefined unless name of globals
+                    context[name] = undefined unless name of context
                     @traverse(p)
                     return
 
@@ -131,12 +131,6 @@ instead of the global context.
                     if p.scope.isGlobal
                         {line, column} = p.node.loc.start
                         src = replaceAt(src, line, column, 'this', 'THIS')
-
-Once the global variables are found, we can add them directly to our context.
-(Since `.addProps()` only copies own-properties, this won't overwrite any
-existing, inherited properties.)
-
-            @addProps(globals)
 
 In order to avoid reformatting the source code any more than necessary, we
 don't use recast's source printer.  Instead, if there are any changes
@@ -160,6 +154,12 @@ expression that handles counting lines and columns.
                 ((?:[^\n]*\n){#{ROW-1}}.{#{COL}})#{MATCH}(.*)
             $///.exec(TEXT)
             if match then match[1] + REPLACE + match[2] else TEXT
+
+
+
+
+
+
 
 
 #### Running Code
