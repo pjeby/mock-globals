@@ -18,7 +18,7 @@ initially-provided globals).
             @outputStream.write = @outputStream.push
 
             @context = ctx = Object.create(global)
-            @addProps(
+            assign(ctx,
                 console: new Console(@outputStream)
                 global: ctx
                 GLOBAL: ctx
@@ -26,14 +26,14 @@ initially-provided globals).
                 module: @dummyModule()
                 exports: {}
                 require: require
-            ).addProps(globals)
+            )
+            assign(ctx, globals)
 
-Properties are normally added via assignment, but some globals aren't writable;
-we use defineProperty to redefine them.
 
-        addProps: (props) ->
-            assign(@context, props)
-            return this
+
+
+
+
 
 
 
@@ -105,7 +105,7 @@ such variables are added as `undefined` properties of the context
                     @traverse(p)
                     target = p.node.left
                     if target.type is 'VariableDeclaration'
-                        target = target.declarations[0].id 
+                        target = target.declarations[0].id
                     name = target.name
                     return if name of context
                     s = p.scope.lookup(target.name)
