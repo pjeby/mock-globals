@@ -1,88 +1,63 @@
-# mocha + markdown = mockdown
+# mock-globals
 
-What better place to specify your code's behavior than in its API documentation?  And how better to document your API than with examples?  But if they're not tested, examples tend to get stale and out-of-date.  And testing them by hand is a pain.
+`mock-globals` lets you run test code in a simulated global environment, without affecting the *real* global environment, without using a new `vm` context.  This lets you test code samples with clean state resets in between, and avoids the problem of test and library code using different `Object` or `Array` types (as would happen with multiple `vm` contexts).
 
-But what if you could *automatically* test your examples, as part of your project's existing mocha test suites?  For that matter, what if you could do *documentation-first testing*, by writing the API docs for the API you're creating, and use the examples in them to drive your initial development?
+**WARNING**: this is not a secure sandbox and is not intended for running untrusted code!  The "protection" it provides is only proof against *accidental* global modifications, and can be trivially bypassed in several ways that I can easily think of, and probably hundreds of less-trivial ways.  It is intended only for running tests, with *no thought given to any actual security*.
 
-Mockdown lets you do all of these things, and more, by testing code samples embedded in markdown files, like this:
-
-```javascript
-console.log("Hello world!")
-```
->     Hello world!
-
-The above is a *documentation test*, or "doctest".  You embed a code block to be run, optionally followed by a blockquoted code block representing its output.  (If you don't include the output block, it's the same as asserting the example outputs nothing.)
-
-If the output doesn't match, or an unexpected error is thrown, the test fails.  If your test completes asynchronously, you can use `wait()` to defer the test's completion until a callback, promise resolution, or other asynchronous result occurs:
+Usage:
 
 ```javascript
-var done = wait();  // this gets a callback... but we could have also just
-                    // passed in a promise, predicate, or timeout to wait for
+// Create a mock environment containing specified global variables
 
-setTimeout(function(){
-  console.log("Hello world!");
-  done();
-}, 50);
-```
->     Hello world!
+var Environment = require('mock-globals').Environment
+var env = new Environment({someVar: "a value"})
 
-Section headings in your markdown files define mocha suites, so your test suites will precisely match the table of contents of your documentation files.  If you need to do things like mark tests to be skipped or ignored, you can add simple HTML comment directives like this:
+// Evaluate code -- it will see the standard environment, but 
+// with a mock console and any added variables
 
-<!-- mockdown: +ignore -->
-    <!-- mockdown: +skip -->
+env.run("console.log(someVar)")
 
-in order to mark a test pending, override the language defaults, change how output is checked, etc.
+// Console output can be read using .getOutput()
+assert(env.getOutput() === "a value\n")
 
-And since these directives are HTML comments, they don't show up when viewing the docs on github, or in any HTML docs you're generating for your website.  (Which means your readers won't get distracted by stuff that only matters to your testing process.)
+// ...which resets to empty after being read
+assert(env.getOutput() === "")
 
-Mockdown was inspired and influenced both by Python's [`doctest`](https://docs.python.org/2/library/doctest.html#simple-usage-checking-examples-in-a-text-file) module and Ian Bicking's [DoctestJS](http://doctestjs.org/), but is a new implementation specifically created to work with mocha and markdown.  Unlike DoctestJS, it:
+// And global variables are written to env.context
+env.run("foo = 42; global.bar = 'baz'")
+assert(env.context.foo === 42)
+assert(env.context.bar === 'baz')
 
-* Works with markdown on the server instead of HTML in the browser
-* Uses standard Node console inspection utilities instead of rolling its own pretty-print facilities, and
-* Supports other languages besides plain Javascript -- including the use of multiple languages in the same document
-* Uses mocha for test running and reporting, allowing integration into existing test suites
-
-## Usage
-
-To include documentation files in your test suites, just pass a list of filenames and an options object to `mockdown.testFiles()`:
-
-```js
-var mockdown = require('mockdown');
-
-mockdown.testFiles(['README.md'], {
-  languages: ['javascript'],  
-  suite: describe,
-  test: it
-})
+// ...instead of the real global context
+assert(typeof foo === "undefined")
+assert(!global.hasOwnProperty("bar"))
 ```
 
-If you call this from a top-level module, the added test suites will be at the top level;  if you call it from inside a suite or `describe()` block, the suites will be nested within that block.
+`run()` also accepts an optional second parameter, an object which can specify the following options:
 
-### Language Options
-### Output Matching Options
+* `filename` - the filename that the code will run as (and emit error traces as coming from)
+* `printResults` - if true, the result of the `run()` will be written to the simulated console  (default value: true)
+* `ignoreUndefined` - don't print an `undefined` result (default: true)
+* `writer` - the function used to convert the result to a string suitable for writing (default value: the Node `repl` module's current `writer` property, which by default is a slight modified version of `util.inspect()`)
 
-## Writing Tests
+## How It Works
 
-### Syntax,  Organization and Titles
-* Language specs
-* Titles (list, section, "Example", comment)
+`Environment` objects have a `.context` property that contains all top-level variables that can be read or written by the code run with `.run()`.  It is an object whose prototype is the real `global` object, so any un-shadowed globals are visible to the running code.
 
-### Output Matching
+The `.run()` method wraps the supplied code in a `with(MOCK_GLOBALS){}` block and makes other minor changes so that e.g. top-level function declarations don't write through to the global space.  It also pre-initializes the `.context` with undefined values for any new global variables assigned to by the code.
 
-* Creating output with console.log/dir
-* Ellipsis matching
-* Whitespace issues
+### Known Limitations
 
-### Asynchronous Completion
+This process results in a near-perfect simulation of a private global environment...  except for the fact that it can easily be worked around if you know how it works.
 
-### Error Handling
-* Error output
+It also:
 
+* Doesn't isolate things like `process.domain`
+* Works only in node.js, not the browser
+* Temporarily creates a global variable called `MOCK_GLOBALS` during `.run()`
+* May create new `undefined` global variables when used with loops of the form `for (var x ...)` (though it will not overwrite an *existing* global variable, or initialize the newly-created variable to anything but `undefined`
 
-### Directives
+These are inherent limitations of this approach to mocking, so if they don't work for your use case, you'll need to use something else.
 
-* Parse caveats (standalone directives only, before tests only, etc.)
-* Pending tests
-* Ignoring tests
-* Setting language
-* Matching options
+(It is possible that the `for (var` quirk is a V8 bug in the implementation of `with`, so it might disappear in some future version of node.js.  But I wouldn't count on it.  It's also possible that it's due to a bug in `recast` or my parsing code, in which case patches are welcome if you figure it out!)
+

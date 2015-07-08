@@ -1,26 +1,21 @@
 {
-  "name": "mockdown",
+  "name": "mock-globals",
   "version": "0.1.0",
-  "description": "Run your docs' examples as mocha test suites",
-  "repository": "git@github.com:pjeby/mockdown.git",
-  "homepage": "https://github.com/pjeby/mockdown",
-  "main": "mockdown.js",
+  "description": "Run tests or code samples in a mock global environment",
+  "repository": "git@github.com:pjeby/mock-globals.git",
+  "homepage": "https://github.com/pjeby/mock-globals",
+  "main": "mock-globals.js",
   "files": [
-    "mockdown.js",
-    "console.js"
+    "mock-globals.js"
   ],
   "scripts": {
     "test": "gulp test",
     "prepublish": "gulp build"
   },
   "keywords": [
-    "mocha",
-    "literate-testing",
-    "literate testing",
-    "doctest",
-    "doctests",
-    "markdown",
-    "document-driven testing"
+    "testing",
+    "eval",
+    "repl"
   ],
   "author": "PJ Eby <pje@telecommunity.com>",
   "license": "ISC",
@@ -35,7 +30,6 @@
     "sinon": "^1.9.1"
   },
   "dependencies": {
-    "marked": "^0.3.3",
     "recast": "^0.10.12"
   }
 }
