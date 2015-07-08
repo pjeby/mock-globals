@@ -1,6 +1,6 @@
 # mock-globals
 
-`mock-globals` lets you run test code in a simulated global environment, without affecting the *real* global environment, without using a new `vm` context.  This lets you test code samples with clean state resets in between, and avoids the problem of test and library code using different `Object` or `Array` types (as would happen with multiple `vm` contexts).
+`mock-globals` lets you run test code in a simulated global environment, without affecting the *real* global environment, and without using a new `vm` context.  This lets you test code samples with clean state resets in between, and avoids the problem of test and library code using different `Object` or `Array` types (as would happen with multiple `vm` contexts).
 
 **WARNING**: this is not a secure sandbox and is not intended for running untrusted code!  The "protection" it provides is only proof against *accidental* global modifications, and can be trivially bypassed in several ways that I can easily think of, and probably hundreds of less-trivial ways.  It is intended only for running tests, with *no thought given to any actual security*.
 
@@ -8,13 +8,11 @@
 
 ```javascript
 // Create a mock environment containing specified global variables
-
 var Environment = require('mock-globals').Environment
 var env = new Environment({someVar: "a value"})
 
 // Evaluate code -- it will see the standard environment, but 
 // with a mock console and any added variables
-
 env.run("console.log(someVar)")
 
 // Console output can be read using .getOutput()
