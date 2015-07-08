@@ -55,9 +55,6 @@ It also:
 * Doesn't isolate things like `process.domain`
 * Works only in node.js, not the browser
 * Temporarily creates a global variable called `MOCK_GLOBALS` during `.run()`
-* May create new `undefined` global variables when used with loops of the form `for (var x ...)` (though it will not overwrite an *existing* global variable, or initialize the newly-created variable to anything but `undefined`
+* Will create new `undefined` global variables when the code being `.run()` contains a global `var` statement.  (This is a side-effect of Javascript declaration hoisting; fortunately, it will not overwrite an *existing* global variable, or initialize such newly-created variables to anything but `undefined`.)
 
 These are inherent limitations of this approach to mocking, so if they don't work for your use case, you'll need to use something else.
-
-(It is possible that the `for (var` quirk is a V8 bug in the implementation of `with`, so it might disappear in some future version of node.js.  But I wouldn't count on it.  It's also possible that it's due to a bug in `recast` or my parsing code, in which case patches are welcome if you figure it out!)
-
