@@ -4,7 +4,7 @@
 
 **WARNING**: this is not a secure sandbox and is not intended for running untrusted code!  The "protection" it provides is only proof against *accidental* global modifications, and can be trivially bypassed in several ways that I can easily think of, and probably hundreds of less-trivial ways.  It is intended only for running tests, with *no thought given to any actual security*.
 
-Usage:
+## Usage
 
 ```javascript
 // Create a mock environment containing specified global variables
@@ -39,6 +39,11 @@ assert(!global.hasOwnProperty("bar"))
 * `printResults` - if true, the result of the `run()` will be written to the simulated console  (default value: true)
 * `ignoreUndefined` - don't print an `undefined` result (default: true)
 * `writer` - the function used to convert the result to a string suitable for writing (default value: the Node `repl` module's current `writer` property, which by default is a slight modified version of `util.inspect()`)
+
+Last, but not least, the environment will include `module`, `exports`, and `require`, just like a real node module or `repl` environment.  (You can of course override any of these by changing the `.context` or passing them into the constructor, e.g. if you want a `require()` with a different base directory for module lookups.)
+
+The default `module` object is actually a mock, whose `exports` property is delegated to the `exports` pseudo-global.  So if you change or pass in an `exports` global, the mock `module` object's `.exports` will automatically reflect that change.  Likewise, if running code sets `module.exports`, the `exports` global will be updated.
+
 
 ## How It Works
 

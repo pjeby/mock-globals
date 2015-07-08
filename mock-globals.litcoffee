@@ -16,7 +16,6 @@ initially-provided globals).
         constructor: (globals={}) ->
             @outputStream = []
             @outputStream.write = @outputStream.push
-
             @context = ctx = Object.create(global)
             assign(ctx,
                 console: new Console(@outputStream)
@@ -29,25 +28,7 @@ initially-provided globals).
             )
             assign(ctx, globals)
 
-
-
-
-
-
-
-
-
-
-
-#### Supporting require() and module.exports in code samples
-
-In order to allow `require()` to work in code samples by default, we use
-roughly the same hack as the node `repl` module uses, and modify our module
-lookup paths to be based on the current directory.  (So if you don't override
-`require` in an environment's context, you'll get a require that works relative
-to the current directory.)
-
-For the exposed `module`, we use a clone of the mockdown module, with an
+For the exposed `module`, we use a clone of the mock-globals module, with an
 `exports` property that gets/sets the context `exports`, so that code samples
 can run in an environment that closely resembles a standard module.
 
@@ -57,28 +38,6 @@ can run in an environment that closely resembles a standard module.
                 set: (v) => @context.exports = v
                 enumerable: yes
             })
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 #### Code Rewriting
 
@@ -223,7 +182,7 @@ The `assign()` function is roughly equivalent to an `Object.assign()` polyfill,
 except that it uses `Object.defineProperty()` to ensure that e.g. an inherited
 descriptor on the target can't veto an assignment.  (As can happen when
 assigning to an object that inherits from the global context, as with the
-`.context` property of a `mockdown.Environment`.)
+`.context` property of an `Environment`.)
 
     assign = (target={}) ->
         to = Object(target)
