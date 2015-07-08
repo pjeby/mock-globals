@@ -68,15 +68,15 @@ describe "Environment(globals)", ->
             expect(@env.run('(function(){})')).to.be.instanceOf Function
             expect(@env.run('new Error')).to.be.instanceOf Error
 
+        describe "shadows globals", ->
 
+            it "in loose mode", ->
+                expect(@env.run('console')).to.equal(@env.context.console)
 
-
-
-
-
-
-
-
+            it "in strict mode", ->
+                expect(
+                    @env.run('(function(){"use strict"; return console})()')
+                ).to.equal(@env.context.console)
 
 
 
