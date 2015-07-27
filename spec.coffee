@@ -11,10 +11,10 @@ spy.named = (name, args...) ->
 
 {Environment} = require './'
 
+# Node vm module got script options as of 0.11.7, but our detection
+# approach doesn't kick in until 0.11.14
 
-
-
-
+is10 = require('semver').lt(process.version, '0.11.14')
 
 
 
@@ -49,7 +49,9 @@ describe "Environment(globals)", ->
             expect(@env.run('1')).to.equal(1)
 
         it "throws any syntax errors", ->
-            expect(=> @env.run('if;')).to.throw SyntaxError
+            expect(=> @env.run('if;', filename:'foo.js')).to.throw(SyntaxError,
+                "#{if is10 then '' else 'foo.js:1\nif;\n  ^\n' \
+                }Unexpected token ;")
 
         it "throws any runtime errors", ->
             expect(=> @env.run('throw new TypeError')).to.throw(
@@ -77,8 +79,6 @@ describe "Environment(globals)", ->
                 expect(
                     @env.run('(function(){"use strict"; return console})()')
                 ).to.equal(@env.context.console)
-
-
 
         describe "prevents global assignment via", ->
 

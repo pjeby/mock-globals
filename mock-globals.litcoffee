@@ -131,10 +131,10 @@ the existence of `vm.runInDebugContext()` (which was added in 0.12).
 
         vm = require 'vm'
 
-        toScript = (code, filename) ->
+        toScript = (code, filename, displayErrors=no) ->
             if filename then new vm.Script(code,
                 if vm.runInDebugContext?    # new API
-                    {filename: filename, displayErrors:false}
+                    {filename, displayErrors}
                 else filename
             )
             else new vm.Script(code)
@@ -146,7 +146,7 @@ global assignment to `MOCK_GLOBALS`, so the `with()` statement will pick up
 our context when it executes.  (It's not needed after that.)
 
         run: (code, opts={}) ->
-            toScript(code, opts.filename) # force syntax error here
+            toScript(code, opts.filename, yes) # force syntax error here
             script = toScript(@rewrite(code), opts.filename)
 
             current_global = global
