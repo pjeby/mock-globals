@@ -208,7 +208,7 @@ describe "Environment(globals)", ->
         it "supports trailing line-comments", ->
             expect(@env.rewrite(src = '// Just a comment'))
             .to.equal("with(MOCK_GLOBALS){#{src}\n}")
-            
+
         it "doesn't rewrite inner `this`", ->
             expect(@env.rewrite(src = '(function(){this})'))
             .to.equal("with(MOCK_GLOBALS){#{src}\n}")
@@ -221,6 +221,10 @@ describe "Environment(globals)", ->
             expect(@env.rewrite(src = 'function x(){ function y(){}; };'))
             .to.equal("with(MOCK_GLOBALS){x=#{src}\n}")
 
+        it "adds missing semicolons to function statement ends", ->
+            expect(@env.rewrite(src = 'function x(){}'))
+            .to.equal("with(MOCK_GLOBALS){x=#{src};\n}")
+
         it "handles multi-line code blocks", ->
             expect(@env.rewrite(src = 'function x(){\n};'))
             .to.equal("with(MOCK_GLOBALS){x=#{src}\n}")
@@ -229,10 +233,6 @@ describe "Environment(globals)", ->
             it "tabs messing up offset positions"
             it "carriage returns and other zero-space characters"
             it "wide character offsets"
-
-
-
-
 
 
 

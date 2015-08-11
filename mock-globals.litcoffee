@@ -73,10 +73,10 @@ such variables are added as `undefined` properties of the context
                     return
                 visitForInStatement: vae
 
-                visitFunctionDeclaration: (p) ->                    
+                visitFunctionDeclaration: (p) ->
                     s = p.scope.lookup(name = p.node.id.name)
                     if not s? or s.isGlobal
-                        funcs.push [name, p.node.loc.start]
+                        funcs.push [name, p.node.loc]
                         context[name] = undefined unless name of context
                     @traverse(p); return
 
@@ -98,9 +98,16 @@ locations where the functions were declared.  We do this in reverse order
 (popping locations off the list) so that if there are multiple declarations on
 the same line, the column positions of earlier declarations will remain valid.
 
+(We also have to make sure that these assignment statements end with a `;`, but
+we remove the extra `;` we add if it's a duplicate.)
+
             if funcs.length
                 while funcs.length
-                    [name, {line, column:col}] = funcs.pop()
+                    [name, loc] = funcs.pop()
+                    {line, column:col} = loc.end
+                    src = replaceAt(src, line, col, '', ';')
+                    src = replaceAt(src, line, col, ';;', ';')
+                    {line, column:col} = loc.start
                     src = replaceAt(src, line, col, '', name + '=')
 
             return "with(MOCK_GLOBALS){#{src}\n}"
@@ -113,13 +120,6 @@ expression that handles counting lines and columns.
                 ((?:[^\n]*\n){#{ROW-1}}.{#{COL}})#{MATCH}([\s\S]*)
             $///.exec(TEXT)
             if match then match[1] + REPLACE + match[2] else TEXT
-
-
-
-
-
-
-
 
 #### Running Code
 
