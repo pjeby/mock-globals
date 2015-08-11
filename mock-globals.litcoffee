@@ -73,12 +73,12 @@ such variables are added as `undefined` properties of the context
                     return
                 visitForInStatement: vae
 
-                visitFunctionDeclaration: (p) ->
-                    name = p.node.id.name
-                    funcs.push [name, p.node.loc.start]
-                    context[name] = undefined unless name of context
-                    @traverse(p)
-                    return
+                visitFunctionDeclaration: (p) ->                    
+                    s = p.scope.lookup(name = p.node.id.name)
+                    if not s? or s.isGlobal
+                        funcs.push [name, p.node.loc.start]
+                        context[name] = undefined unless name of context
+                    @traverse(p); return
 
 In addition to variables and functions, it's also possible to refer to the
 global context as `this`, so we replace global-scope `this` with `THIS`, which
@@ -103,14 +103,14 @@ the same line, the column positions of earlier declarations will remain valid.
                     [name, {line, column:col}] = funcs.pop()
                     src = replaceAt(src, line, col, '', name + '=')
 
-            return "with(MOCK_GLOBALS){#{src}}"
+            return "with(MOCK_GLOBALS){#{src}\n}"
 
 The actual source code replacement is done with a parameterized regular
 expression that handles counting lines and columns.
 
         replaceAt = (TEXT, ROW, COL, MATCH, REPLACE) ->
             match = ///^
-                ((?:[^\n]*\n){#{ROW-1}}.{#{COL}})#{MATCH}(.*)
+                ((?:[^\n]*\n){#{ROW-1}}.{#{COL}})#{MATCH}([\s\S]*)
             $///.exec(TEXT)
             if match then match[1] + REPLACE + match[2] else TEXT
 
