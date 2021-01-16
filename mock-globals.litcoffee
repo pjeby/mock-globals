@@ -14,8 +14,12 @@ initially-provided globals).
         Console = require('console').Console
 
         constructor: (globals={}) ->
-            @outputStream = []
-            @outputStream.write = @outputStream.push
+            @outputStream = Object.assign [],
+                write: (data) -> @push(data); this
+                once: -> this
+                removeListener: -> this
+                listenerCount: -> 0
+
             @context = ctx = Object.create(global)
             assign(ctx,
                 console: new Console(@outputStream)

@@ -1,6 +1,6 @@
 {
   "name": "mock-globals",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Run tests or code samples in a mock global environment",
   "repository": "git@github.com:pjeby/mock-globals.git",
   "homepage": "https://github.com/pjeby/mock-globals",
